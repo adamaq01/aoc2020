@@ -3,7 +3,7 @@ use std::error::Error;
 mod puzzles;
 
 use clap::Clap;
-use puzzles::{PuzzleRegistry, Stage};
+use puzzles::{day1::Day1, PuzzleRegistry, Stage};
 use reqwest::blocking::Client;
 
 #[macro_use]
@@ -32,6 +32,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut registry = PuzzleRegistry::new();
 
     // Register each day
+    registry.register::<Day1>();
 
     run(token, client, registry, opts.day, opts.stage)?;
 
