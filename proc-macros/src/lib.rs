@@ -46,9 +46,9 @@ pub fn puzzle(input: TokenStream) -> TokenStream {
                 #day
             }
 
-            fn run(inputs: &[&str]) -> Result<()> {
+            fn run(inputs: &[&str], stage: Stage) -> Result<()> {
                 let inputs = Self::#parse(inputs)?;
-                Self::#run(inputs)
+                Self::#run(inputs, stage)
             }
         }
     };

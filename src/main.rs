@@ -3,18 +3,20 @@ use std::error::Error;
 mod puzzles;
 
 use clap::Clap;
-use puzzles::PuzzleRegistry;
+use puzzles::{PuzzleRegistry, Stage};
 use reqwest::blocking::Client;
 
 #[macro_use]
 extern crate aoc_proc_macros;
 
-/// Run the algorithm to solve the AoC 2020 problem of the provided day
+/// Run the algorithm to solve the AoC 2020 problem of the provided day and stage
 #[derive(Clap)]
 #[clap(version = "1.0", author = "Adamaq01 <adamthibert01@gmail.com>")]
 struct Opts {
     /// Day number
     day: u8,
+    /// The stage
+    stage: Stage,
     /// The auth token (if not specified it will use the TOKEN environment variable)
     token: Option<String>,
 }
@@ -31,16 +33,17 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Register each day
 
-    run(opts.day, registry, client, token)?;
+    run(token, client, registry, opts.day, opts.stage)?;
 
     Ok(())
 }
 
 fn run(
-    day: u8,
-    registry: PuzzleRegistry,
-    client: Client,
     token: String,
+    client: Client,
+    registry: PuzzleRegistry,
+    day: u8,
+    stage: Stage,
 ) -> Result<(), Box<dyn Error>> {
     let url = format!("https://adventofcode.com/2020/day/{}/input", day);
     let inputs = client
@@ -50,7 +53,7 @@ fn run(
         .text()?;
     let inputs = inputs.trim().split("\n").collect::<Vec<&str>>();
 
-    registry.run(day, inputs.as_slice())?;
+    registry.run(day, inputs.as_slice(), stage)?;
 
     Ok(())
 }
