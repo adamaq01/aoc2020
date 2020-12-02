@@ -1,14 +1,20 @@
-use std::{collections::HashMap, error::Error, str::FromStr};
+use std::{collections::HashMap, error::Error, fmt::Display, str::FromStr};
 
 pub mod day1;
 pub mod day2;
 
 pub type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Stage {
     First = 0,
     Second = 1,
+}
+
+impl Stage {
+    pub fn new(stage: &str) -> std::result::Result<Self, String> {
+        Self::from_str(stage)
+    }
 }
 
 impl FromStr for Stage {
@@ -23,13 +29,84 @@ impl FromStr for Stage {
     }
 }
 
-pub trait Puzzle {
-    fn day() -> u8;
-    fn run(inputs: &[&str], stage: Stage) -> Result<()>;
+pub trait Puzzle<I, O: Display>: Runnable {
+    fn day(&self) -> u8;
+    fn stage(&self) -> Stage;
+    fn parse_inputs(&mut self, inputs: &[&str]) -> Result<I>;
+    fn run(&mut self, inputs: I) -> Result<O>;
+}
+
+pub trait Runnable {
+    fn fully_run(&mut self, inpust: &[&str]) -> Result<()>;
+}
+
+pub trait IntoPuzzle<I, O: Display, P: Puzzle<I, O>> {
+    fn puzzle(self) -> P;
+}
+
+pub struct FnPuzzle<I, O: Display> {
+    day: u8,
+    stage: Stage,
+    parse: Box<dyn FnMut(&[&str]) -> Result<I>>,
+    func: Box<dyn FnMut(I) -> Result<O>>,
+}
+
+impl<I, O: Display> FnPuzzle<I, O> {
+    pub fn new(
+        day: u8,
+        stage: Stage,
+        parse: Box<dyn FnMut(&[&str]) -> Result<I>>,
+        func: Box<dyn FnMut(I) -> Result<O>>,
+    ) -> Self {
+        Self {
+            day,
+            stage,
+            parse,
+            func,
+        }
+    }
+}
+
+impl<I, O: Display> Puzzle<I, O> for FnPuzzle<I, O> {
+    fn day(&self) -> u8 {
+        self.day
+    }
+
+    fn stage(&self) -> Stage {
+        self.stage
+    }
+
+    fn parse_inputs(&mut self, inputs: &[&str]) -> Result<I> {
+        (self.parse)(inputs)
+    }
+
+    fn run(&mut self, inputs: I) -> Result<O> {
+        (self.func)(inputs)
+    }
+}
+
+impl<I, O: Display> Runnable for FnPuzzle<I, O> {
+    fn fully_run(&mut self, inputs: &[&str]) -> Result<()> {
+        let inputs = self.parse_inputs(inputs)?;
+        let output = self.run(inputs)?;
+
+        println!("Solution: {}", output);
+
+        Ok(())
+    }
+}
+
+impl<I, O: Display, F> IntoPuzzle<I, O, FnPuzzle<I, O>> for F
+where
+    F: FnMut() -> FnPuzzle<I, O>,
+{
+    fn puzzle(mut self) -> FnPuzzle<I, O> {
+        self()
+    }
 }
 
 pub struct PuzzleRegistry {
-    registry: HashMap<u8, fn(&[&str], Stage) -> Result<()>>,
+    registry: HashMap<(u8, Stage), Box<dyn Runnable>>,
 }
 
 impl PuzzleRegistry {
@@ -39,13 +116,18 @@ impl PuzzleRegistry {
         }
     }
 
-    pub fn register<P: Puzzle>(&mut self) {
-        self.registry.insert(P::day(), P::run);
+    pub fn register<I, O: Display, P: Puzzle<I, O> + 'static, T: IntoPuzzle<I, O, P>>(
+        &mut self,
+        puzzle: T,
+    ) {
+        let puzzle = puzzle.puzzle();
+        let puzzle = Box::new(puzzle);
+        self.registry.insert((puzzle.day(), puzzle.stage()), puzzle);
     }
 
-    pub fn run(&self, day: u8, inputs: &[&str], stage: Stage) -> Result<()> {
-        if let Some(puzzle) = self.registry.get(&day) {
-            puzzle(inputs, stage)?;
+    pub fn run(&mut self, day: u8, stage: Stage, inputs: &[&str]) -> Result<()> {
+        if let Some(puzzle) = self.registry.get_mut(&(day, stage)) {
+            puzzle.fully_run(inputs)?;
         }
 
         Ok(())

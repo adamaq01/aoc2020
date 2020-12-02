@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
-use proc_macro2::{Group, Punct};
-use syn::{parse::Parse, parse_macro_input, DeriveInput, Ident, LitInt};
+use proc_macro2::Punct;
+use syn::{parse::Parse, parse_macro_input, FnArg, Ident, LitInt, PathArguments, ReturnType, Type};
 
 extern crate proc_macro;
 #[macro_use]
@@ -10,9 +10,9 @@ extern crate syn;
 struct PuzzleParams {
     day: LitInt,
     _token: Punct,
-    parse: Ident,
+    stage: Ident,
     _token2: Punct,
-    run: Ident,
+    parse: Ident,
 }
 
 impl Parse for PuzzleParams {
@@ -20,38 +20,64 @@ impl Parse for PuzzleParams {
         Ok(PuzzleParams {
             day: input.parse()?,
             _token: input.parse()?,
-            parse: input.parse()?,
+            stage: input.parse()?,
             _token2: input.parse()?,
-            run: input.parse()?,
+            parse: input.parse()?,
         })
     }
 }
 
-#[proc_macro_derive(Puzzle, attributes(puzzle))]
-pub fn puzzle(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
-    let attributes: TokenStream = input.attrs.first().unwrap().tokens.clone().into();
-    let params = parse_macro_input!(attributes as Group);
-    let params: TokenStream = params.stream().into();
-    let params = parse_macro_input!(params as PuzzleParams);
-    let ident = input.ident.clone();
+#[proc_macro_attribute]
+pub fn puzzle(metadata: TokenStream, input: TokenStream) -> TokenStream {
+    let function = parse_macro_input!(input as syn::ItemFn);
+    let name = &function.sig.ident;
 
+    let input = &function.sig.inputs.first().expect("Couldn't get input");
+    let input = if let FnArg::Typed(input) = input {
+        input.ty.clone()
+    } else {
+        panic!("Bad input");
+    };
+    let output = &function.sig.output;
+    let output = if let ReturnType::Type(_, output) = output {
+        output.clone()
+    } else {
+        panic!("Bad output");
+    };
+    let output = if let Type::Path(output) = *output {
+        output
+            .path
+            .segments
+            .first()
+            .expect("Bad output")
+            .clone()
+            .arguments
+    } else {
+        panic!("Bad output");
+    };
+    let output = if let PathArguments::AngleBracketed(output) = output {
+        output.args.first().expect("Bad output").clone()
+    } else {
+        panic!("Bad output");
+    };
+
+    let params = parse_macro_input!(metadata as PuzzleParams);
     let day = params.day;
-    let parse = params.parse;
-    let run = params.run;
+    let stage = params.stage.to_string();
+    let parse_inputs = params.parse;
 
-    let non = quote! {
-        impl Puzzle for #ident {
-            fn day() -> u8 {
-                #day
-            }
+    let s = quote! {
+        pub fn #name() -> FnPuzzle<#input, #output> {
 
-            fn run(inputs: &[&str], stage: Stage) -> Result<()> {
-                let inputs = Self::#parse(inputs)?;
-                Self::#run(inputs, stage)
-            }
+            #function
+
+            FnPuzzle::new(#day,
+                Stage::new(#stage).expect("Couldn't parse stage"),
+                Box::new(#parse_inputs),
+                Box::new(#name),
+            )
         }
     };
 
-    non.into()
+    s.into()
 }

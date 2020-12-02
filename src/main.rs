@@ -3,7 +3,7 @@ use std::error::Error;
 mod puzzles;
 
 use clap::Clap;
-use puzzles::{day1::Day1, day2::Day2, PuzzleRegistry, Stage};
+use puzzles::{day1, day2, PuzzleRegistry, Stage};
 use reqwest::blocking::Client;
 
 #[macro_use]
@@ -32,8 +32,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut registry = PuzzleRegistry::new();
 
     // Register each day
-    registry.register::<Day1>();
-    registry.register::<Day2>();
+    registry.register(day1::first_stage);
+    registry.register(day1::second_stage);
+    registry.register(day2::first_stage);
+    registry.register(day2::second_stage);
 
     run(token, client, registry, opts.day, opts.stage)?;
 
@@ -43,7 +45,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn run(
     token: String,
     client: Client,
-    registry: PuzzleRegistry,
+    mut registry: PuzzleRegistry,
     day: u8,
     stage: Stage,
 ) -> Result<(), Box<dyn Error>> {
@@ -55,7 +57,7 @@ fn run(
         .text()?;
     let inputs = inputs.trim().split("\n").collect::<Vec<&str>>();
 
-    registry.run(day, inputs.as_slice(), stage)?;
+    registry.run(day, stage, inputs.as_slice())?;
 
     Ok(())
 }
