@@ -1,6 +1,7 @@
 use std::{collections::HashMap, error::Error, str::FromStr};
 
 pub mod day1;
+pub mod day2;
 
 pub type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
