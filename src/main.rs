@@ -3,7 +3,7 @@ use std::error::Error;
 mod puzzles;
 
 use clap::Clap;
-use puzzles::{day1, day2, PuzzleRegistry, Stage};
+use puzzles::{day1, day2, day3, PuzzleRegistry, Stage};
 use reqwest::blocking::Client;
 
 #[macro_use]
@@ -36,6 +36,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     registry.register(day1::second_stage);
     registry.register(day2::first_stage);
     registry.register(day2::second_stage);
+    registry.register(day3::first_stage);
+    registry.register(day3::second_stage);
 
     run(token, client, registry, opts.day, opts.stage)?;
 

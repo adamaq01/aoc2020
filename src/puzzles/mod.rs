@@ -2,6 +2,7 @@ use std::{collections::HashMap, error::Error, fmt::Display, str::FromStr};
 
 pub mod day1;
 pub mod day2;
+pub mod day3;
 
 pub type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
