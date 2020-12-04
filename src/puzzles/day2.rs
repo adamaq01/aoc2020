@@ -11,9 +11,9 @@ pub struct PasswordEntry {
     password: String,
 }
 
-fn parse_inputs(inputs: &[&str]) -> Result<Vec<PasswordEntry>> {
+fn parse_inputs(inputs: String) -> Result<Vec<PasswordEntry>> {
     let mut entries = Vec::new();
-    for input in inputs {
+    for input in inputs.split("\n") {
         let raw = input.clone().into();
         let mut input = input.split("-");
         let least = input

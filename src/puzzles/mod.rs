@@ -33,12 +33,12 @@ impl FromStr for Stage {
 pub trait Puzzle<I, O: Display>: Runnable {
     fn day(&self) -> u8;
     fn stage(&self) -> Stage;
-    fn parse_inputs(&mut self, inputs: &[&str]) -> Result<I>;
+    fn parse_inputs(&mut self, inputs: String) -> Result<I>;
     fn run(&mut self, inputs: I) -> Result<O>;
 }
 
 pub trait Runnable {
-    fn fully_run(&mut self, inpust: &[&str]) -> Result<()>;
+    fn fully_run(&mut self, inpust: String) -> Result<()>;
 }
 
 pub trait IntoPuzzle<I, O: Display, P: Puzzle<I, O>> {
@@ -48,7 +48,7 @@ pub trait IntoPuzzle<I, O: Display, P: Puzzle<I, O>> {
 pub struct FnPuzzle<I, O: Display> {
     day: u8,
     stage: Stage,
-    parse: Box<dyn FnMut(&[&str]) -> Result<I>>,
+    parse: Box<dyn FnMut(String) -> Result<I>>,
     func: Box<dyn FnMut(I) -> Result<O>>,
 }
 
@@ -56,7 +56,7 @@ impl<I, O: Display> FnPuzzle<I, O> {
     pub fn new(
         day: u8,
         stage: Stage,
-        parse: Box<dyn FnMut(&[&str]) -> Result<I>>,
+        parse: Box<dyn FnMut(String) -> Result<I>>,
         func: Box<dyn FnMut(I) -> Result<O>>,
     ) -> Self {
         Self {
@@ -77,7 +77,7 @@ impl<I, O: Display> Puzzle<I, O> for FnPuzzle<I, O> {
         self.stage
     }
 
-    fn parse_inputs(&mut self, inputs: &[&str]) -> Result<I> {
+    fn parse_inputs(&mut self, inputs: String) -> Result<I> {
         (self.parse)(inputs)
     }
 
@@ -87,7 +87,7 @@ impl<I, O: Display> Puzzle<I, O> for FnPuzzle<I, O> {
 }
 
 impl<I, O: Display> Runnable for FnPuzzle<I, O> {
-    fn fully_run(&mut self, inputs: &[&str]) -> Result<()> {
+    fn fully_run(&mut self, inputs: String) -> Result<()> {
         let inputs = self.parse_inputs(inputs)?;
         let output = self.run(inputs)?;
 
@@ -126,7 +126,7 @@ impl PuzzleRegistry {
         self.registry.insert((puzzle.day(), puzzle.stage()), puzzle);
     }
 
-    pub fn run(&mut self, day: u8, stage: Stage, inputs: &[&str]) -> Result<()> {
+    pub fn run(&mut self, day: u8, stage: Stage, inputs: String) -> Result<()> {
         if let Some(puzzle) = self.registry.get_mut(&(day, stage)) {
             puzzle.fully_run(inputs)?;
         }

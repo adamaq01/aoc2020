@@ -2,10 +2,10 @@ use std::str::FromStr;
 
 use super::{FnPuzzle, Result, Stage};
 
-fn parse_inputs(inputs: &[&str]) -> Result<Vec<u32>> {
+fn parse_inputs(inputs: String) -> Result<Vec<u32>> {
     let mut numbers = Vec::new();
-    for input in inputs {
-        numbers.push(u32::from_str(*input)?);
+    for input in inputs.split("\n") {
+        numbers.push(u32::from_str(input)?);
     }
     Ok(numbers)
 }

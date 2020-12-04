@@ -19,11 +19,11 @@ impl Grid {
     }
 }
 
-fn parse_inputs(inputs: &[&str]) -> Result<Grid> {
+fn parse_inputs(inputs: String) -> Result<Grid> {
     let mut grid = Vec::new();
     let mut width = 0;
 
-    for input in inputs {
+    for input in inputs.split("\n") {
         let mut line = Vec::new();
         for cell in input.chars() {
             if cell == '#' {

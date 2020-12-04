@@ -56,10 +56,11 @@ fn run(
         .get(url.as_str())
         .header("cookie", format!("session={}", token))
         .send()?
-        .text()?;
-    let inputs = inputs.trim().split("\n").collect::<Vec<&str>>();
+        .text()?
+        .trim()
+        .into();
 
-    registry.run(day, stage, inputs.as_slice())?;
+    registry.run(day, stage, inputs)?;
 
     Ok(())
 }
